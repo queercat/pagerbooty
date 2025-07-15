@@ -56,3 +56,51 @@ pub struct Data {
 pub struct IncidentType {
     pub name: String,
 }
+
+#[derive(Debug)]
+pub enum Priority {
+    P1,
+    P2,
+    P3,
+    P4,
+    P5,
+    Unknown,
+}
+
+impl From<&String> for Priority {
+    fn from(priority: &String) -> Priority {
+        match priority.to_uppercase().as_str() {
+            "P1" => Priority::P1,
+            "P2" => Priority::P2,
+            "P3" => Priority::P3,
+            "P4" => Priority::P4,
+            "P5" => Priority::P5,
+            _ => Priority::Unknown,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum EventType {
+    Triggered,
+    Escalated,
+    PriorityUpdated,
+    Unimplemented,
+}
+
+impl From<&String> for EventType {
+    fn from(event_type: &String) -> EventType {
+        match event_type.as_str() {
+            "incident.escalated" => EventType::Escalated,
+            "incident.triggered" => EventType::Triggered,
+            "incident.priority_updated" => EventType::PriorityUpdated,
+            _ => EventType::Unimplemented,
+        }
+    }
+}
+
+impl From<&Event> for Priority {
+    fn from(event: &Event) -> Priority {
+        Priority::from(&event.data.priority.summary)
+    }
+}
