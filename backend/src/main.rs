@@ -21,40 +21,28 @@ fn serialize(message: &'static str) -> String {
 }
 
 
-/// I wanted this to have a smooth curve from the vibration intensity of e.g. P4 -> P1, but the API request doesn't send the previous data.
-/// We could try caching and checking if we're updating something we knew previously, but it's more important to be correct.
-fn handle_priority_updated(request: &Event) {
-    let priority = Priority::from(request);
-}
-
-fn handle_triggered(request: &Event) {
-    let priority = Priority::from(request);
-}
-
-fn handle_escalated(request: &Event) {
-    let priority = Priority::from(request);
-}
-
 #[post("/", data = "<request>")]
-fn handle_event(buttplug: &State<Buttplug>, request: Json<PagerdutyWebhookRequest>) -> Response {
+async fn handle_event(buttplug: &State<Buttplug>, request: Json<PagerdutyWebhookRequest>) -> Response {
     let event = &request.event;
+    let priority = Priority::from(event);
 
     match EventType::from(&event.event_type) {
         EventType::PriorityUpdated => {
-            handle_priority_updated(event);
+            buttplug.vibrate_from_priority(priority).await;
         }
         EventType::Triggered => {
-            handle_triggered(event);
+            buttplug.vibrate_from_priority(priority).await;
         }
         EventType::Escalated => {
-            handle_escalated(event);
+            buttplug.vibrate_from_priority(priority).await;
         }
         EventType::Unimplemented => {
             dbg!("Found unimplemented incident type", &event.event_type);
+            return Response::Error("Unimplemented incident type".into());
         }
     };
 
-    Response::Okay(serialize("yay"))
+    Response::Okay(serialize("Bzzzt"))
 }
 
 #[launch]

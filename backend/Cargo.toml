@@ -5,6 +5,5 @@ edition = "2024"
 
 [dependencies]
 buttplug = "9.0.8"
-intiface-engine = "3.0.8"
 rocket = { version = "0.5.1", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }

@@ -1,9 +1,56 @@
-use buttplug::client::ButtplugClient;
+use std::sync::Arc;
+use std::time::Duration;
+use buttplug::client::{ButtplugClient, ButtplugClientDevice, ScalarValueCommand};
 use buttplug::core::connector::{ButtplugRemoteClientConnector, ButtplugWebsocketClientTransport};
 use buttplug::core::message::serializer::ButtplugClientJSONSerializer;
+use rocket::tokio::sync::Semaphore;
+use rocket::tokio::task::JoinSet;
+use rocket::tokio::time::{sleep};
+use crate::types::pagerduty_webhook_request::Priority;
 
 pub struct Buttplug {
-    pub client: ButtplugClient
+    pub devices: Vec<Arc<ButtplugClientDevice>>,
+    pub semaphore: Arc<Semaphore>,
+}
+
+impl Buttplug {
+    pub async fn vibrate_from_priority(&self, priority: Priority) {
+        let _permit = self.semaphore.try_acquire();
+
+        if _permit.is_err() { return; }
+
+        let intensity = match priority {
+            Priority::P1 => 1f64,
+            Priority::P2 => 0.8f64,
+            Priority::P3 => 0.6f64,
+            Priority::P4 => 0.4f64,
+            Priority::P5 => 0.3f64,
+            Priority::Unknown => 1f64,
+        };
+
+        let mut tasks = JoinSet::new();
+
+        let mut devices = self.devices.clone();
+
+        for device in devices {
+            tasks.spawn(async move {
+                dbg!("starting device", &device);
+                device.vibrate(&ScalarValueCommand::ScalarValue(intensity)).await
+            });
+        }
+
+        tasks.join_all().await;
+
+        sleep(Duration::from_secs((4f64 * intensity) as u64)).await;
+
+        devices = self.devices.clone();
+        tasks = JoinSet::new();
+
+        for device in devices {
+            dbg!("stopping device", &device);
+            device.stop().await.ok();
+        }
+    }
 }
 
 impl Buttplug {
@@ -22,12 +69,11 @@ impl Buttplug {
             .await
             .expect("Can't connect to Buttplug Server, exiting!");
 
-        let server_name = client.server_name().expect("Can't get server name");
-
         let devices = client.devices();
 
         Buttplug {
-            client
+            devices,
+            semaphore: Arc::new(Semaphore::new(1)),
         }
     }
 }
