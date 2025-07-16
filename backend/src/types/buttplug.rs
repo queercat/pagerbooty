@@ -34,7 +34,6 @@ impl Buttplug {
 
         for device in devices {
             tasks.spawn(async move {
-                dbg!("starting device", &device);
                 device.vibrate(&ScalarValueCommand::ScalarValue(intensity)).await
             });
         }
@@ -44,10 +43,8 @@ impl Buttplug {
         sleep(Duration::from_secs((4f64 * intensity) as u64)).await;
 
         devices = self.devices.clone();
-        tasks = JoinSet::new();
 
         for device in devices {
-            dbg!("stopping device", &device);
             device.stop().await.ok();
         }
     }

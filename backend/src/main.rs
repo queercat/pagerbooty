@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rocket;
 
-use crate::types::pagerduty_webhook_request::{Event, EventType, PagerdutyWebhookRequest, Priority};
+use crate::types::pagerduty_webhook_request::{EventType, PagerdutyWebhookRequest, Priority};
 use rocket::serde::json::Json;
 use rocket::State;
 use crate::types::buttplug::Buttplug;
