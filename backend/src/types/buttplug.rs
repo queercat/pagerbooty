@@ -15,9 +15,9 @@ pub struct Buttplug {
 
 impl Buttplug {
     pub async fn vibrate_from_priority(&self, priority: Priority) {
-        let _permit = self.semaphore.try_acquire();
+        let permit = self.semaphore.try_acquire();
 
-        if _permit.is_err() { return; }
+        if permit.is_err() { return; }
 
         let intensity = match priority {
             Priority::P1 => 1f64,
@@ -65,6 +65,8 @@ impl Buttplug {
             .connect(connector)
             .await
             .expect("Can't connect to Buttplug Server, exiting!");
+
+        client.start_scanning().await.expect("Couldn't scan for devices!");
 
         let devices = client.devices();
 
